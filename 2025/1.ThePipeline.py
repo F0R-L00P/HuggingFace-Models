@@ -116,3 +116,31 @@ text = """Data Science is the art and scinence of Data?"""
 # model could make stuff up! can fabricate content not presented in the original text
 abstractive_summary = abstractive_summarizer(text)
 pprint.pprint(abstractive_summary)
+
+# -----------------------------------------------------------------
+# Q&A -------------------------------------------------------------
+# -----------------------------------------------------------------
+from pypdf import PdfReader
+from transformers import pipeline
+
+# load PDF file
+reader = PdfReader(
+    r"C:\Users\behna\OneDrive\Documents\GitHub\HuggingFace-Models\2025\Extraterrestrial.pdf"
+)
+
+documentText = ""
+
+for page in reader.pages:
+    documentText += page.extract_text()
+
+documentText
+
+# load transformer pipeline, and query the document
+qa_pipe = pipeline(
+    task="question-answering", model="distilbert-base-cased-distilled-squad"
+)
+
+questions = "What is extraterrestrial?"
+
+response = qa_pipe(question=questions, context=documentText)
+print(response["answer"])
