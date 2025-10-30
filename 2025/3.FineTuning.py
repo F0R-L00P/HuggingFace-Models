@@ -61,8 +61,8 @@ training_arguments = TrainingArguments(
     eval_strategy="epoch",  # obtain evaluation metrics after EACH epoch
     num_train_epochs=2,
     learning_rate=2e-5,
-    per_device_train_batch_size=8,
-    per_device_eval_batch_size=8,
+    per_device_train_batch_size=3,
+    per_device_eval_batch_size=3,
     weight_decay=0.01,
 )
 
@@ -77,6 +77,7 @@ trainer = Trainer(
 )
 
 # instantiate training method loop
+## NOTE: This is FULL finetuning of the entire MODEL!
 trainer.train()
 
 ##########################################################
@@ -108,4 +109,5 @@ for i, predicted_label in enumerate(predicted_labels):
 
 # SVAE FINETUNE MODEL AND TOKENIZER
 model.save_pretrained("imdb_expert_model")
+# this simply ensure re-producibility keeping tokenizer
 tokenizer.save_pretrained("imdb_expert_tokenizer")
