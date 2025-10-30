@@ -96,7 +96,12 @@ pprint.pprint(result)
 # summarization pipeline --------------------------------------
 # --------------------------------------------------------------
 # extractive summarization
-summarizer = pipeline(task="summarization", model="nyamuda/extractive-summarization")
+summarizer = pipeline(
+    task="summarization",
+    model="nyamuda/extractive-summarization",
+    max_length=10,
+    clean_up_tokenization_spaces=True,
+)
 
 text = """
 In mathematics, the Fourier transform (FT) is an integral transform that takes a function as input, and outputs another function that describes the extent to which various frequencies are present in the original function. The output of the transform is a complex-valued function of frequency. The term Fourier transform refers to both the mathematical operation and to this complex-valued function. When a distinction needs to be made, the output of the operation is sometimes called the frequency domain representation of the original function.[note 1] The Fourier transform is analogous to decomposing the sound of a musical chord into the intensities of its constituent pitches.
@@ -121,12 +126,9 @@ pprint.pprint(abstractive_summary)
 # Q&A -------------------------------------------------------------
 # -----------------------------------------------------------------
 from pypdf import PdfReader
-from transformers import pipeline
 
 # load PDF file
-reader = PdfReader(
-    r"C:\Users\behna\OneDrive\Documents\GitHub\HuggingFace-Models\2025\Extraterrestrial.pdf"
-)
+reader = PdfReader(r"Extraterrestrial.pdf")
 
 documentText = ""
 
@@ -144,3 +146,40 @@ questions = "What is extraterrestrial?"
 
 response = qa_pipe(question=questions, context=documentText)
 print(response["answer"])
+
+# ----------------------------------------------------------------
+# text generation ------------------------------------------------
+# ----------------------------------------------------------------
+generator = pipeline(task="text-generation", model="distilgpt2")
+
+prompt = "the Gion neighborhood in Kyoto is famous for"
+
+# NOTE:paddig makes sequences same length upto max_length
+# truncation true if input longer than max length
+output = generator(
+    prompt,
+    max_length=100,
+    pad_token_id=generator.tokenizer.eos_token_id,
+)
+
+print(output[0]["generated_text"])
+
+# --------------------------------------------------------------
+# guided output ------------------------------------------------
+# --------------------------------------------------------------
+generator = pipeline(task="text-generation", model="distilgpt2")
+
+review = "This book was great. I enjoyed the plot twist, it was twisted"
+response = "Dear reader, thank you for your review, but its kinda wired"
+prompt = f"book review:\n{review}\n\nBppk shop response to the review:\n{response}"
+
+output = generator(prompt, max_length=10, pad_token_id=generator.tokenizer.eos_token_id)
+
+print(output[0]["generated_text"])
+
+# view model architectures
+print(generator.model)
+print(generator.model.config)
+# directly check architecture
+print(generator.model.config.is_decoder)
+print(generator.model.config.is_encoder_decoder)
