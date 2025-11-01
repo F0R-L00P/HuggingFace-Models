@@ -4,3 +4,5 @@ FineTuned/
 trainer_output/
 imdb_expert_model/
 imdb_expert_tokenizer/
+**/test.py
+/test.py
