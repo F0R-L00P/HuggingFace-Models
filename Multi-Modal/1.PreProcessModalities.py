@@ -90,6 +90,3 @@ processor = AutoProcessor.from_pretrained("openai/whisper-small")
 audio_preprocessed = processor(waveform, sampling_rate=sr, return_tensors="pt")
 
 print(audio_preprocessed)
-# -----------------------------------------------------------
-# -------------------------pipeline--------------------------
-# -----------------------------------------------------------
