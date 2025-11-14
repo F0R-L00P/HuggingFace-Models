@@ -47,8 +47,34 @@ display(Audio(audio_data, rate=sampling_rate))
 # -----------------------------------------------------------
 # -------------------------Evaluation------------------------
 # -----------------------------------------------------------
+# Minimal zero-shot image classification example
+zs_pipe = pipeline(
+    "zero-shot-image-classification", model="openai/clip-vit-base-patch32"
+)
+image_url = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/hub/parrots.png"
+zs_result = zs_pipe(image_url, candidate_labels=["animals", "humans", "landscape"])
+print(zs_result)
+print(f"Top label: {zs_result[0]['label']} (score={zs_result[0]['score']:.4f})")
+
+# -----------------------------------------------------------
+# ---------------Proper Evaluation (labeled data)------------
+# -----------------------------------------------------------
+# Use a classifier fine-tuned on a labeled dataset (beans) and compute accuracy.
 from evaluate import evaluator
 
-task_evaluator = evaluator("image-classification")
-metrics_dict = {"precision": "precision", "recall": "recall", "f1": "f1"}
-label_map = pipe.model.config.label2id
+clf_data = load_dataset("beans", split="validation")
+clf_pipe = pipeline("image-classification", model="nateraw/vit-base-beans")
+task_eval = evaluator("image-classification")
+
+# Map string labels from pipeline outputs to dataset int ids
+label_map = clf_pipe.model.config.label2id  # e.g., {"angular_leaf_spot":0, ...}
+
+eval_results = task_eval.compute(
+    model_or_pipeline=clf_pipe,
+    data=clf_data,
+    metric="accuracy",
+    input_column="image",
+    label_column="labels",
+    label_mapping=label_map,
+)
+print("Evaluation results:", eval_results)
