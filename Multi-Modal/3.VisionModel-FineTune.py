@@ -109,3 +109,94 @@ elif isinstance(result, list):
     plt.show()
 else:
     print("Unexpected segmentation output type:", type(result))
+
+# -----------------------------------------------------------
+# ----------------FINE-TUNING VISION MODEL-------------------
+# -----------------------------------------------------------
+from datasets import load_dataset
+# ~1,200 images total
+dataset = load_dataset("beans")  
+print(dataset)
+print(dataset["train"][0])
+
+# view a single image
+image = dataset["train"][0]["image"]
+image.show()
+
+data_train = dataset["train"]
+data_val = dataset["validation"]
+data_test = dataset["test"]
+
+# view labels
+labels = dataset["train"].features["labels"].names
+print(labels)
+
+# generate label mapping
+label2id, id2label = dict(), dict()
+for i, label in enumerate(labels):
+    label2id[label] = i
+    id2label[i] = label
+
+print(label2id)
+print(id2label)
+
+from transformers import AutoImageProcessor, AutoModelForImageClassification
+checkpoint = "google/mobilenet_v2_1.0_224"
+model = AutoModelForImageClassification.from_pretrained(
+    checkpoint,
+    num_labels=len(labels),
+    id2label=id2label,
+    label2id=label2id,
+    # final classification Linear layer is reinitialized with output size of 3
+    ignore_mismatched_sizes=True,
+)
+
+# new data must be preprocessed as original input data and converted to tensors
+# Data PreProcessing
+from transformers import AutoImageProcessor
+from torchvision.transforms import Compose, Normalize, ToTensor
+image_processor = AutoImageProcessor.from_pretrained(checkpoint)
+
+# normalization pixl intensity
+normalize = Normalize(
+    mean=image_processor.image_mean, std=image_processor.image_std
+)
+
+transform = Compose([ToTensor(), normalize])
+
+# define a transorms functio for conversion of the new data
+def transforms(examples):
+    examples["pixel_values"] = [
+        transform(image.convert("RGB")) for image in examples["image"]
+    ]
+    return examples
+
+# with transfrom attached the transforms to the dataset
+dataset = dataset.with_transform(transforms)
+print(dataset)
+
+# view
+plt.imshow(dataset["train"][10]["pixel_values"].permute(1, 2, 0))
+plt.show()
+
+# train model
+from transformers import TrainingArguments, Trainer
+training_args = TrainingArguments(
+    output_dir="./dataset-beans",
+    per_device_train_batch_size=16,
+    learning_rate=6e-4,
+    gradient_accumulation_steps=4,
+    num_train_epochs=5,
+    push_to_hub=False,
+)
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=data_train,
+    eval_dataset=data_val,
+    processing_class=image_processor,
+)
+
+# predict prior to training
+predictions = trainer.predict(data_test)
