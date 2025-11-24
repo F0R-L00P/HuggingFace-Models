@@ -185,6 +185,7 @@ def transforms(examples):
     examples["pixel_values"] = pixel_values_list
     return examples
 
+
 # with transforms attached the transforms to the dataset
 dataset = dataset.with_transform(transforms)
 print(dataset)
@@ -204,11 +205,13 @@ from transformers import TrainingArguments, Trainer
 
 accuracy_metric = evaluate.load("accuracy")
 
+
 def compute_metrics(eval_pred):
     logits, labels = eval_pred
     # logits: (batch, num_labels)
     preds = np.argmax(logits, axis=-1)
     return accuracy_metric.compute(predictions=preds, references=labels)
+
 
 training_args = TrainingArguments(
     output_dir="./dataset-beans",
@@ -237,4 +240,4 @@ trainer = Trainer(
 
 # predict prior to training
 predictions = trainer.predict(data_test)
-predictions.metrics['test_accuracy']
+predictions.metrics["test_accuracy"]
